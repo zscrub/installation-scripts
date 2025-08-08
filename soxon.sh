@@ -1,12 +1,26 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Soxon bot + GitHub runner setup..."
+echo "🚀 Starting Soxon bot..."
+
+# Check for STATBOT_TOKEN env var
+if [ -z "$STATBOT_TOKEN" ]; then
+  read -p "🔑 Enter STATBOT_TOKEN: " STATBOT_TOKEN
+fi
+
+if [[ -z "$STATBOT_TOKEN" ]]; then
+  echo "Error: STATBOT_TOKEN is required for startup script. Exiting"
+  exit 1 # Exit with a non-zero status code to indicate an error
+fi
+
 
 # 1. Install Docker + Git
 echo "🔧 Installing Docker and Git..."
 sudo apt update
 sudo apt install -y docker.io git
+
+echo "⛔️ Adding $USER to Docker group..."
+sudo usermod -aG docker $USER
 
 echo "💻 Enabling and starting Docker..."
 sudo systemctl enable docker
@@ -37,22 +51,8 @@ echo "🕹️ Running Soxon bot with restart policy..."
 docker run -d \
   --name soxon-bot \
   --restart=always \
+  -e STATBOT_TOKEN="$STATBOT_TOKEN" \
   soxon-bot
 
-# 4. GitHub Actions Runner (inside container)
-# Replace with your actual repo/org URL + token
-REPO_URL="https://github.com/zscrub/soxon"
-RUNNER_TOKEN="REPLACE_ME"
-
-echo "🏃 Setting up GitHub self-hosted runner in Docker..."
-
-docker run -d \
-  --name github-runner \
-  --restart=always \
-  -e REPO_URL=$REPO_URL \
-  -e RUNNER_TOKEN=$RUNNER_TOKEN \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  myoung34/github-runner:latest
-
-echo "✅ Setup complete! Soxon bot and GitHub runner are alive and will survive reboot :3"
+echo "✅ Setup complete! Garlic bot running..."
 
